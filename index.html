@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>LPay</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<style>
+:root{--page-width:100%;--page-max-width:480px;--page-bg:#1b1b1b;--green-main:#1dce9f;--card-bg:#242424;--card-border:#333;--text-main:#fff;--text-muted:#999}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--page-bg);color:var(--text-main)}
+body{min-height:100vh;min-height:100dvh}
+.container{width:var(--page-width);max-width:var(--page-max-width);height:100vh;height:100dvh;margin:auto;padding:18px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.brand{display:flex;align-items:center;justify-content:center;gap:11px;margin-bottom:24px;flex-shrink:0}
+.brand-icon{width:43px;height:43px;border-radius:13px;object-fit:cover}
+.brand-name{font-size:24px;font-weight:800;letter-spacing:-1px}
+.brand-name span{color:var(--green-main)}
+.card{width:100%;background:var(--card-bg);border:1px solid var(--card-border);border-radius:21px;padding:24px 21px;flex-shrink:1;min-height:0}
+.app-icon{width:60px;height:60px;border-radius:16px;object-fit:cover;display:block;margin-bottom:19px}
+h1{font-size:23px;font-weight:800;letter-spacing:-.8px}
+.subtitle{color:var(--text-muted);font-size:12px;line-height:1.7;margin-top:9px}
+.btn{width:100%;min-height:49px;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5}
+.google-btn{margin-top:24px;background:#303030;color:white;border:1px solid #414141;display:flex;justify-content:center;align-items:center;gap:11px}
+.google-btn img{width:19px;height:19px}
+.primary-btn{margin-top:20px;background:var(--green-main);color:#111}
+.info{background:#2c2c2c;border:1px solid #383838;border-radius:12px;padding:12px;display:flex;align-items:center;gap:11px;margin-top:20px}
+.info p{font-size:10px;line-height:1.6;color:var(--text-muted)}
+.info b{color:white}
+.price-box{background:#1b1b1b;border:1px solid #383838;border-radius:15px;padding:19px;margin-top:20px}
+.price-label{color:#999;font-size:10px;font-weight:700;letter-spacing:1px}
+.price{font-size:37px;font-weight:800;color:var(--green-main);margin-top:8px;letter-spacing:-1.5px}
+.price small{font-size:11px;color:#999;letter-spacing:0}
+.badge{display:inline-block;background:#303030;color:var(--green-main);border:1px solid #3a3a3a;border-radius:20px;padding:6px 11px;font-size:9px;font-weight:700;margin-top:9px}
+.feature{display:flex;align-items:center;gap:10px;font-size:11px;color:#ccc;margin-top:15px}
+.feature span{color:var(--green-main);font-size:15px}
+.account{background:#303030;border-radius:10px;padding:12px;margin-top:16px;font-size:10px;color:#aaa;word-break:break-all}
+.logout{background:#303030;color:#ff7777;border:1px solid #454545;margin-top:13px}
+.loader{width:34px;height:34px;border:3px solid #393939;border-top-color:var(--green-main);border-radius:50%;animation:spin .8s linear infinite;margin:auto auto 15px}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading{text-align:center;padding:35px 10px}
+.loading-text{font-size:11px;color:#999}
+.error{color:#ff7777;font-size:10px;margin-top:13px;line-height:1.6;text-align:center}
+.footer{text-align:center;color:#666;font-size:9px;letter-spacing:1px;margin-top:18px;flex-shrink:0}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="brand">
+  <img src="lpay_icon.png" class="brand-icon" alt="LPay">
+  <div class="brand-name">L<span>Pay</span></div>
+</div>
+
+<div class="card">
+<div id="loading"><div class="loader"></div><p class="loading-text">Securing your account...</p></div>
+
+<div id="loginDiv" class="hidden">
+  <img src="lpay_icon.png" class="app-icon" alt="LPay Icon">
+  <h1>Welcome to LPay</h1>
+  <p class="subtitle">Sign in to your account to continue.</p>
+  <button class="btn google-btn" id="googleBtn" onclick="googleLogin()"><img src="https://www.google.com/favicon.ico"> Continue with Google</button>
+  <div class="info"><p><b>Secure Login</b><br>Your account is protected by Firebase authentication.</p></div>
+  <div id="loginError" class="error"></div>
+</div>
+
+<div id="paywall" class="hidden">
+  <img src="lpay_icon.png" class="app-icon" alt="LPay Icon">
+  <h1>Renew Subscription</h1>
+  <p class="subtitle">Renew your access to continue using LPay.</p>
+  <div class="price-box">
+    <div class="price-label">LPAY ACCESS PLAN</div>
+    <div class="price">₦1,500 <small>/ 14 days</small></div>
+    <div class="badge">14 DAYS ACCESS</div>
+    <div class="feature"><span>✓</span>14 days application access</div>
+    <div class="feature"><span>✓</span>Secure account authentication</div>
+    <div class="feature"><span>✓</span>Verified payment processing</div>
+  </div>
+  <button class="btn primary-btn" id="payBtn" onclick="payWithPaystack()">Pay ₦1,500 →</button>
+  <div id="paymentError" class="error"></div>
+  <div class="account" id="paymentEmail"></div>
+  <button class="btn logout" onclick="logout()">Sign Out</button>
+</div>
+
+<div id="content" class="hidden"><h1>Checking...</h1></div>
+</div>
+<div class="footer">LPAY · SECURE DIGITAL EXPERIENCE</div>
+</div>
+
+<script>
+// === CHANGE THIS TO YOUR VERCEL URL AFTER DEPLOY ===
+const VERCEL_URL = "https://lpayvercelready.vercel.app";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAhZOxtcG9WEVqCkGYFZQkLyHJE7Gue6AY",
+  authDomain: "lpayapp.firebaseapp.com",
+  projectId: "lpayapp",
+  storageBucket: "lpayapp.firebasestorage.app",
+  messagingSenderId: "78413247132",
+  appId: "1:78413247132:web:bd275363a2631f4aa57359"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+const screens = ["loading","loginDiv","paywall","content"];
+function showScreen(id){screens.forEach(s=>{document.getElementById(s).classList.add("hidden")});document.getElementById(id).classList.remove("hidden");}
+function setError(id, msg){document.getElementById(id).innerText=msg;}
+
+async function getIdToken(){
+  const user = auth.currentUser;
+  if(!user) throw new Error("No user");
+  return await user.getIdToken();
+}
+
+async function apiCall(path, body=null){
+  const token = await getIdToken();
+  const opts = {
+    method: body ? "POST" : "GET",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Content-Type": "application/json"
+    }
+  };
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(VERCEL_URL + path, opts);
+  let data={};
+  try{ data=await res.json(); }catch(_){ throw new Error("Vercel returned an invalid response. Check the API deployment."); }
+  if(!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+async function googleLogin(){
+  const btn=document.getElementById("googleBtn");
+  btn.disabled=true;setError("loginError","");btn.innerText="Connecting...";
+  try{
+    const provider=new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({prompt:"select_account"});
+    await auth.signInWithPopup(provider);
+  }catch(e){console.error(e);setError("loginError","Google login failed. Please try again.");}
+  finally{btn.disabled=false;btn.innerHTML='<img src="https://www.google.com/favicon.ico"> Continue with Google';}
+}
+
+async function loadAccount(user){
+  showScreen("loading");
+  try{
+    const data = await apiCall("/api/getSubscription");
+    if(data.admin===true || data.active===true){
+      window.location.href="welcome.html";
+      return;
+    }
+    showScreen("paywall");
+    document.getElementById("paymentEmail").innerText=user.email;
+  }catch(e){console.error(e);showScreen("loginDiv");setError("loginError","Unable to verify your account: "+e.message);}
+}
+
+let paymentRunning=false;
+async function payWithPaystack(){
+  if(paymentRunning)return;
+  if(!auth.currentUser)return;
+  paymentRunning=true;
+  const btn=document.getElementById("payBtn");
+  btn.disabled=true;btn.innerText="Preparing payment...";setError("paymentError","");
+  try{
+    const result = await apiCall("/api/initializePayment", {});
+    const url=result.authorization_url;
+    if(!url || !url.startsWith("https://checkout.paystack.com/")) throw new Error("Invalid");
+    window.location.assign(url);
+  }catch(e){console.error(e);setError("paymentError","Unable to initialize payment. Try again.");paymentRunning=false;btn.disabled=false;btn.innerText="Pay ₦1,500 →";}
+}
+
+async function verifyReturnedPayment(reference){
+  showScreen("loading");
+  try{
+    await apiCall("/api/verifyPayment", {reference});
+    history.replaceState({},document.title,window.location.pathname);
+    window.location.href="welcome.html";
+  }catch(e){
+    console.error(e);
+    history.replaceState({},document.title,window.location.pathname);
+    showScreen("paywall");
+    setError("paymentError","Payment verification pending. If charged, contact support.");
+  }
+}
+
+auth.onAuthStateChanged(async user=>{
+  if(!user){showScreen("loginDiv");return;}
+  const params=new URLSearchParams(window.location.search);
+  const reference=params.get("reference");
+  if(reference){await verifyReturnedPayment(reference);return;}
+  await loadAccount(user);
+});
+
+async function logout(){await auth.signOut();history.replaceState({},document.title,window.location.pathname);showScreen("loginDiv");}
+</script>
+</body>
+</html>
